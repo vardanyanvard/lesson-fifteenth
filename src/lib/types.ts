@@ -13,6 +13,7 @@ export interface IResponse {
   status: string;
   message?: string;
   payload?: unknown;
+  user?: IWideUser;
 }
 
 export interface IUserLogin {
@@ -21,3 +22,13 @@ export interface IUserLogin {
 }
 
 export type InputUser = Omit<IUser, "id" | "isPrivate" | "cover" | "picture">;
+
+export interface IWideUser extends IUser {
+  followers: IUser[];
+  following: IUser[];
+}
+
+export interface IContextType {
+  account: IWideUser;
+  setAccount: (user: IWideUser) => void;
+}
