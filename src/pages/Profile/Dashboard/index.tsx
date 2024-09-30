@@ -1,5 +1,5 @@
-import { useOutletContext } from "react-router-dom";
-import { IContextType } from "../../../lib/types";
+import { useOutletContext, useParams } from "react-router-dom";
+import { IContextType, IViewUser, IWideUser } from "../../../lib/types";
 
 import {
   MDBCol,
@@ -12,11 +12,19 @@ import {
   MDBTypography,
 } from "mdb-react-ui-kit";
 import { BASE_URL, DEFAULT_COVER, DEFAULT_PIC } from "../../../lib/constantst";
-import { useRef } from "react";
-import { handleCoverUpload, handlePictureUpload } from "../../../lib/api";
+import { useEffect, useRef, useState } from "react";
+import {
+  handleCoverUpload,
+  handleGetUser,
+  handlePictureUpload,
+} from "../../../lib/api";
 
 export function Dashboard() {
-  const { account, setAccount } = useOutletContext<IContextType>();
+  const { account, setAccount, setViewUser } = useOutletContext<IContextType>();
+
+  const [user, setUser] = useState<IWideUser>(account);
+
+  const id = useParams().id;
 
   const photo = useRef<HTMLInputElement | null>(null);
   const cover = useRef<HTMLInputElement | null>(null);
@@ -30,7 +38,7 @@ export function Dashboard() {
 
         handlePictureUpload(form).then((response) => {
           if (response.payload) {
-            setAccount({ ...account, picture: response.payload as string });
+            setAccount({ ...user, picture: response.payload as string });
           }
         });
       }
@@ -46,12 +54,22 @@ export function Dashboard() {
 
         handleCoverUpload(form).then((response) => {
           if (response.payload) {
-            setAccount({ ...account, cover: response.payload as string });
+            setAccount({ ...user, cover: response.payload as string });
           }
         });
       }
     }
   };
+
+  useEffect(() => {
+    if (id) {
+      handleGetUser(id).then((r) => {
+        setUser(r.payload as IWideUser);
+        setViewUser(r.payload as IViewUser);
+      });
+    }
+  }, [id]);
+
   return (
     <div className="gradient-custom-2" style={{ backgroundColor: "#9de2ff" }}>
       <MDBContainer className="py-5 h-100">
@@ -60,11 +78,9 @@ export function Dashboard() {
             <MDBCard>
               <div className="rounded-top text-white d-flex flex-row">
                 <MDBCardImage
-                  onClick={() => cover.current?.click()}
+                  onClick={() => !id && cover.current?.click()}
                   className="cover_img"
-                  src={
-                    !account.cover ? DEFAULT_COVER : BASE_URL + account.cover
-                  }
+                  src={!user.cover ? DEFAULT_COVER : BASE_URL + user.cover}
                 />
 
                 <div
@@ -72,16 +88,12 @@ export function Dashboard() {
                   style={{ width: "150px" }}
                 >
                   <MDBCardImage
-                    src={
-                      !account.picture
-                        ? DEFAULT_PIC
-                        : BASE_URL + account.picture
-                    }
+                    src={!user.picture ? DEFAULT_PIC : BASE_URL + user.picture}
                     alt="Generic placeholder image"
                     className="mt-4 mb-2 img-thumbnail"
                     fluid
                     style={{ width: "150px", zIndex: "1" }}
-                    onClick={() => photo.current?.click()}
+                    onClick={() => !id && photo.current?.click()}
                   />
                 </div>
                 <input
@@ -98,7 +110,7 @@ export function Dashboard() {
                 />
                 <div className="ms-3" style={{ marginTop: "130px" }}>
                   <MDBTypography tag="h5" style={{ position: "relative" }}>
-                    {account.name} {account.surname}
+                    {user.name} {user.surname}
                   </MDBTypography>
                   <MDBCardText style={{ position: "relative" }}>
                     New York
@@ -118,7 +130,7 @@ export function Dashboard() {
                   </div>
                   <div className="px-3">
                     <MDBCardText className="mb-1 h5">
-                      {account.followers.length}
+                      {user.followers?.length}
                     </MDBCardText>
                     <MDBCardText className="small text-muted mb-0">
                       Followers
@@ -126,7 +138,7 @@ export function Dashboard() {
                   </div>
                   <div>
                     <MDBCardText className="mb-1 h5">
-                      {account.following.length}
+                      {user.following?.length}
                     </MDBCardText>
                     <MDBCardText className="small text-muted mb-0">
                       Following
